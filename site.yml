@@ -1,0 +1,50 @@
+---
+- name: Setup K3s
+  hosts: all
+  become: true
+  tasks:
+    - name: Get latest k3s binary
+      get_url:
+        url: https://github.com/rancher/k3s/releases/download/v0.2.0/k3s-armhf
+        dest: /usr/local/bin/k3s
+        mode: 0755
+
+- name: Start master
+  hosts: master
+  become: true
+  tasks:
+    - name: Put Systemd Service file
+      template:
+        src: k3s.service
+        dest: /etc/systemd/system/
+
+    - name: Start service
+      service:
+        name: k3s
+        state: started
+        enabled: true
+
+- name: Start slaves
+  hosts: slaves
+  become: true
+  tasks:
+    - name: Get Node Token
+      slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      delegate_to: groups['master'][0]
+      register: nodetoken
+
+    - name: Set param fact
+      set_fact:
+        k3s_params: agent --server https://{{ hostvars[groups['master'][0]]['ansible_ssh_host']}}:6443 --token {{ nodetoken['content'] | b64decode }}
+
+    - name: Put Systemd Service file
+      template:
+        src: k3s.service
+        dest: /etc/systemd/system/
+
+    - name: Start service
+      service:
+        name: k3s
+        state: started
+        enabled: true

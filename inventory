@@ -1,0 +1,6 @@
+[master]
+rpi-1 ansible_ssh_host=192.168.1.101 ansible_user=pi
+
+[slaves]
+rpi-2 ansible_ssh_host=192.168.1.102 ansible_user=pi
+rpi-3 ansible_ssh_host=192.168.1.103 ansible_user=pi
